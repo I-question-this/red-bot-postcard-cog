@@ -96,7 +96,6 @@ class PostCard(commands.Cog):
         await ctx.send(embed=discord.Embed.from_dict(contents))
 
 
-    @commands.is_owner()
     @commands.command()
     async def postcard(self, ctx:commands.Context):
         """Get today's postcard"""
