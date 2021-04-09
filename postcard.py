@@ -80,7 +80,7 @@ class PostCard(commands.Cog):
         posts = await self._conf.posts()
         if todays_date not in posts.keys():
             LOG.info("Retrieving today's postcard")
-            self.update_postcards()
+            await self.update_postcards()
             posts = await self._conf.posts()
         # Return today's post, if it was posted
         return posts.get(todays_date)
