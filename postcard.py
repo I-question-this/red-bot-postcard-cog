@@ -134,7 +134,7 @@ class PostCard(commands.Cog):
 
     @commands.guild_only()
     @commands.admin()
-    @commands.command(name="set_auto_postcard_channel")
+    @commands.command()
     async def set_postcard_autopost_channel(self, ctx: commands.Context, 
             channel:discord.TextChannel) -> None:
         """Sets which channel the postcard will be auto posted daily.
@@ -155,8 +155,8 @@ class PostCard(commands.Cog):
 
     @commands.guild_only()
     @commands.admin()
-    @commands.command(name="unset_auto_postcard_channel")
-    async def set_postcard_autopost_channel(self, ctx: commands.Context) -> None:
+    @commands.command()
+    async def unset_postcard_autopost_channel(self, ctx: commands.Context) -> None:
         """Unsets the channel the postcard will be auto posted daily.
         """
         await self._conf.guild(ctx.guild).autopost_channel.set(None)
@@ -199,31 +199,29 @@ class PostCard(commands.Cog):
     @tasks.loop(minutes=15)
     async def auto_postcard(self):
         #check if it's too early to post
-        if time.gmtime().tm_hour < await self._conf.gmt_hour_start():
-            LOG.info(f"Auto Posting -- {time.gmtime().tm_hour} < "\
-                     f"{await self._conf.gmt_hour_start()}: "\
-                     "Too Early, Waiting")
-        else:
-            last_auto_post_date = await self._conf.last_auto_post_date()
-            todays_date = tm_struct_to_string(time.gmtime())
-            if last_auto_post_date == todays_date:
-                LOG.info(f"Auto Posting -- {todays_date}: Already Posted Today")
-            else:
-                postcard = await self.todays_postcard()
-                if postcard is None:
-                    LOG.info(f"Auto Posting -- {todays_date}: Not Available")
-                else:
-                    LOG.info(f"Auto Posting -- {todays_date}: Available")
-                    await self._conf.last_auto_post_date.set(todays_date)
+        if (time.gmtime().tm_hour < await self._conf.gmt_hour_start()):
+            return
 
-                    for guild in self.bot.guilds:
-                        # Get the registered channel for auto postcard posting
-                        channel_id = await self._conf.guild(guild).autopost_channel()
-                        if channel_id is not None:
-                            channel = self.bot.get_channel(channel_id)
-                            LOG.info(f"Auto Posting -- {todays_date}: Posted in "\
-                                     f"{guild.name}")
-                            await self.post_postcard(postcard, channel)
+        last_auto_post_date = await self._conf.last_auto_post_date()
+        todays_date = tm_struct_to_string(time.gmtime())
+        if last_auto_post_date == todays_date:
+            return
+
+        postcard = await self.todays_postcard()
+        if postcard is  None:
+            return
+
+        LOG.info(f"Auto Posting -- {todays_date}: Available")
+        await self._conf.last_auto_post_date.set(todays_date)
+
+        for guild in self.bot.guilds:
+            # Get the registered channel for auto postcard posting
+            channel_id = await self._conf.guild(guild).autopost_channel()
+            if channel_id is not None:
+                channel = self.bot.get_channel(channel_id)
+                LOG.info(f"Auto Posting -- {todays_date}: Posted in "\
+                         f"{guild.name}")
+                await self.post_postcard(postcard, channel)
 
 
     @auto_postcard.before_loop
