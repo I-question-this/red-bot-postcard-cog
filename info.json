@@ -1,0 +1,6 @@
+{
+  "requirements": [
+    "feedparser",
+    "markdownify"
+  ]
+}
